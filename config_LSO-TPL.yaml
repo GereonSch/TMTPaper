@@ -1,0 +1,109 @@
+# ======================================
+# General configuration settings
+# ======================================
+# seed: null  # set to None (null) or a value for deterministic reproducibility
+seed: 2025
+
+use_wandb: true   # set to null if no wandb should be used
+
+# WanDB Logging
+wandb:
+  # project: "MPL-TMT-Combined_LSO-TPL"
+  project: "testing-tmt"
+  # project: "testing"
+  entity: "nids-inm4"       # Wandb entity name (user/organization)
+  log_freq: 1               # Frequency (in epochs) of logging metrics during training
+  notes: 'testing'          # put some notes here
+
+
+# ======================================
+# Data
+# ======================================
+data:
+  path: "./data/"
+  # filenames: ['ExecTMTA.csv','ExecTMTB.csv']                            # contains NO subject IDs
+  filenames: ['ExecPapTMTA.xlsx', 'ExecPapTMTB.xlsx']                     # contains subject IDs
+  drop_columns: ['TIV', 'Age', 'Gender', 'Geschlecht', 'TMT_A', 'TMT_B']  # possible column names to drop
+  do_norm: true
+  norm_axis:  0        # 0 (default) => apply normalisation across columns
+  n_comp_pca: 0        # 0 (default) => apply PCA decomposition if n_comp > 0
+  n_comp_ica: 0        # 0 (default) => apply ICA decomposition if n_comp > 0
+  ratio_val: 0.2       # 0.2 (default) => ratio of test split
+
+
+
+# ======================================
+# cross-validation
+# ======================================
+train:
+  mode: "LSO"  # Learning mode: "LRO" for leave-one-run-out cross-validation, "LSO" for leave-subject-out cross-validation
+
+  n_repeat: 1
+  # n_repeat: 3
+  # n_repeat: 5
+  # n_repeat: 10
+  # n_repeat: 50
+  # n_repeat: 100
+
+  # Number of Epochs
+  # max_epochs:  100
+  max_epochs:  200
+  # max_epochs:  250
+  # max_epochs:  500
+
+  batch_size: -1      # Batch size for training. Set to -1 (default) for using all data
+
+
+
+
+# ======================================
+# data augmentation
+# ======================================
+augmentation:
+  add_chan: 0        # 0 (default). Set to >0 to add additional channels with permuted columns
+  crop: 0            # 0 (default)  Set to >0 to crop row elements randomly to use a less features
+  permute: null      # null (default). Set to true to permute the order of the features
+
+
+
+# ======================================
+# Model parameters
+# ======================================
+model:
+  loss_type: 'triplet'      # CrossEntropy | triplet | NTXent | contrastive | circle
+  triplet_type: 'all'       # lower margin to margin=0.2
+
+  # triplet_type: 'semihard'  # semihard with margin=0.4., hard with margin=0.05, all with margin=0.2
+  # margin: 0.4
+  # margin: 0.2
+  distance_metric: "CosineSimilarity"  # CosineSimilarity or else L2 (LpDistance with p=2)
+  # distance_metric: "LpDistance"  # CosineSimilarity or else L2 (LpDistance with p=2)
+
+  # dim_out:  8
+  # dim_out:  16
+  # dim_out:  32                # 32 (default). Size of output layer
+  # dim_out:  50
+  # dim_out:  64
+  # dim_out:  128
+  dim_out:  256
+
+  lr:  0.0001
+  # lr:  0.01
+  # lr:  0.1
+  lr:  0.2                    # 0.2 (default). Warm-Up LR value
+  # lr:  0.5
+
+  dropout:  0.0               # 0 (default). Dropout ratio
+  weight_decay:  0.0          # 0 (default). weight decay
+  label_smoothing:  0.0       # 0 (default). label smoothing
+
+
+
+# Trainer configuration
+trainer:
+  device: 1
+  accelerator: 'auto'
+  num_workers:  0
+  gradient_clip_val: 1.0        # 1.0 (default). Clip gradients to stabilize updates or set to null
+
+
