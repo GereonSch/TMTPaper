@@ -26,6 +26,7 @@ class CrossEntropyModule(pl.LightningModule):
         self.val_f1 = F1Score('binary', num_classes=2, average='macro')
         self.val_specificity = BinarySpecificity()
 
+
     def forward(self, x):
         return self.model(x)
 
@@ -53,6 +54,7 @@ class CrossEntropyModule(pl.LightningModule):
         self.log("train_recall", recall, prog_bar=False)
         self.log("train_f1", f1, prog_bar=False)
 
+
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -73,12 +75,13 @@ class CrossEntropyModule(pl.LightningModule):
         specificity = self.val_specificity(preds, labels)
 
         # Logging metrics
-        self.log("val_loss", loss, prog_bar=True)
-        self.log("val_acc", acc, prog_bar=True)
+        self.log("val_loss", loss, on_epoch=True, prog_bar=True)
+        self.log("val_acc", acc, on_epoch=True, prog_bar=True)
         self.log("val_precision", precision, prog_bar=False)
         self.log("val_recall", recall, prog_bar=False)
         self.log("val_specificity", specificity, prog_bar=False)
         self.log("val_f1", f1, prog_bar=False)
+
 
         return loss
 

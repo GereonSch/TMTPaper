@@ -278,6 +278,7 @@ def load_model(cfg):
     loss_type = cfg['model'].get('loss_type', 'triplet')
     n_classes = cfg['model'].get('n_classes', 2)
 
+
     input_dim = Xshape[1] * n_samples if len(Xshape) == 3 else n_samples
 
     if loss_type == 'CrossEntropy':
