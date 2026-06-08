@@ -1,7 +1,7 @@
 #################################################
 #
 # DL-based TMT Classification using combined TMT A/B
-# IMPROVED VERSION with better SHAP analysis and metric collection
+# IMPROVED VERSION v2 - Fixed SHAP DeepExplainer issues
 #
 #################################################
 import numpy as np
@@ -23,6 +23,7 @@ from TMT_utils_MPL import load_model, get_dataloaders
 #################################################
 # Load configuration
 fname_cfg = 'config_LRO-CE.yaml'  # LRO with ContrastiveLossg
+#fname_cfg = 'config_LSO-TPL.yaml'      # LSO with TripletLoss
 cfg = load_config(fname_cfg)
 
 # ====================================
@@ -70,6 +71,7 @@ for irepeat in range(cfg['train']['n_repeat']):
     # ====================================
     # load and init model
     # ====================================
+    # TODO: add additional head for triplet loss config to allow classification on both, subject and class_labels
     model = load_model(cfg)
 
     # ====================================
@@ -194,7 +196,7 @@ print()
 print('>>> DONE !')
 
 # ============================================
-# SHAP Analysis - Improved Version
+# SHAP Analysis - Fixed Version v2
 # ============================================
 print("\n" + "="*60)
 print("Starting SHAP Analysis")
@@ -207,13 +209,11 @@ import matplotlib.pyplot as plt
 class_index = 1  # positive Klasse
 
 # Create background from all training data across repetitions
-# This ensures the background represents the training distribution
 print("\nCreating background dataset from training data...")
 all_train_samples = np.vstack(train_sets_for_background)
 print(f"Total training samples available: {all_train_samples.shape[0]}")
 
-# Stratified sampling for background (100 samples is reasonable for KernelExplainer)
-# For DeepExplainer, we can use fewer (10-50 samples)
+# Stratified sampling for background
 n_background = min(100, all_train_samples.shape[0])
 background_indices = np.random.RandomState(42).choice(
     all_train_samples.shape[0],
@@ -255,18 +255,58 @@ for ckpt_idx, (ckpt_path, X_eval) in enumerate(zip(checkpoint_paths, test_sets))
             probs = torch.nn.functional.softmax(logits, dim=1).cpu().numpy()
         return probs
 
-    # Use DeepExplainer for neural networks (much faster than KernelExplainer)
-    # DeepExplainer works well with neural networks and requires fewer background samples
-    print(f"  Computing SHAP values with DeepExplainer...")
+    # Try multiple explainers in order of preference
+    shap_vals = None
+    explainer_used = None
+    
+    # 1. Try DeepExplainer first (fastest for neural networks)
+    print(f"  Attempting DeepExplainer...")
     try:
-        explainer = shap.DeepExplainer(
-            model_predict,
-            background[:min(30, len(background))]  # Use 10 background samples for DeepExplainer
-        )
-
+        # DeepExplainer works best with tensors
+        background_tensor = torch.tensor(background[:10], dtype=torch.float32).to(device)
+        
+        explainer = shap.DeepExplainer(model_predict, background_tensor)
         shap_vals = explainer.shap_values(X_eval)
-
-        # Handle output format (DeepExplainer can return list for multi-class)
+        explainer_used = "DeepExplainer"
+        print(f" DeepExplainer succeeded")
+        
+    except Exception as e:
+        print(f"  ✗ DeepExplainer failed: {type(e).__name__}: {str(e)[:100]}")
+        
+        # 2. Try PermutationExplainer (good alternative)
+        print(f"  Attempting PermutationExplainer...")
+        try:
+            explainer = shap.PermutationExplainer(
+                model_predict, 
+                background[:30],
+                max_evals=5000,
+                batch_size=100
+            )
+            shap_vals = explainer.shap_values(X_eval)
+            explainer_used = "PermutationExplainer"
+            print(f"  ✓ PermutationExplainer succeeded")
+            
+        except Exception as e2:
+            print(f"  ✗ PermutationExplainer failed: {type(e2).__name__}: {str(e2)[:100]}")
+            
+            # 3. Fallback to KernelExplainer
+            print(f"  Attempting KernelExplainer (fallback)...")
+            try:
+                explainer = shap.KernelExplainer(
+                    model_predict, 
+                    background[:30],
+                    link="logit"
+                )
+                shap_vals = explainer.shap_values(X_eval, nsamples=100)
+                explainer_used = "KernelExplainer"
+                print(f"  ✓ KernelExplainer succeeded")
+                
+            except Exception as e3:
+                print(f"  ✗ KernelExplainer failed: {type(e3).__name__}: {str(e3)[:100]}")
+                continue
+    
+    # Handle output format
+    if shap_vals is not None:
         if isinstance(shap_vals, list):
             shap_vals_class = shap_vals[class_index]
         else:
@@ -278,34 +318,10 @@ for ckpt_idx, (ckpt_path, X_eval) in enumerate(zip(checkpoint_paths, test_sets))
 
         shap_vals_class = np.array(shap_vals_class)
         print(f"  SHAP values shape: {shap_vals_class.shape}")
+        print(f"  Explainer used: {explainer_used}")
 
         all_shap_values.append(shap_vals_class)
         all_x_eval.append(X_eval)
-
-    except Exception as e:
-        print(f"Error computing SHAP values: {e}")
-        print("  Falling back to KernelExplainer (slower but more general)...")
-        try:
-            explainer = shap.KernelExplainer(
-                model_predict,
-                background[:min(30, len(background))]  # KernelExplainer needs more background samples
-            )
-            shap_vals = explainer.shap_values(X_eval, nsamples=100)
-
-            if isinstance(shap_vals, list):
-                shap_vals_class = shap_vals[class_index]
-            else:
-                if len(shap_vals.shape) == 3:
-                    shap_vals_class = shap_vals[:, :, class_index]
-                else:
-                    shap_vals_class = shap_vals
-
-            shap_vals_class = np.array(shap_vals_class)
-            all_shap_values.append(shap_vals_class)
-            all_x_eval.append(X_eval)
-        except Exception as e2:
-            print(f"  KernelExplainer also failed: {e2}")
-            continue
 
 # Stack all SHAP values from all repetitions
 if len(all_shap_values) > 0:
@@ -337,7 +353,7 @@ if len(all_shap_values) > 0:
         class_names=["Class 0", "Class 1"]
     )
     plt.tight_layout()
-    plt.savefig("logging/shap_plots/summary_plot.png", dpi=300, bbox_inches='tight')
+    plt.savefig("shapts/summary_plot.png", dpi=300, bbox_inches='tight')
     plt.show()
 
     # Create bar plot of mean absolute SHAP values
@@ -352,7 +368,7 @@ if len(all_shap_values) > 0:
         class_names=["Class 0", "Class 1"]
     )
     plt.tight_layout()
-    plt.savefig("logging/shap_plots/bar_plot.png", dpi=300, bbox_inches='tight')
+    plt.savefig("shap_plots/bar_plot.png", dpi=300, bbox_inches='tight')
     plt.show()
 
     # Save SHAP values for further analysis
