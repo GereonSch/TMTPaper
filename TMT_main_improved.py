@@ -261,7 +261,7 @@ for ckpt_idx, (ckpt_path, X_eval) in enumerate(zip(checkpoint_paths, test_sets))
     try:
         explainer = shap.DeepExplainer(
             model_predict,
-            background[:min(10, len(background))]  # Use 10 background samples for DeepExplainer
+            background[:min(30, len(background))]  # Use 10 background samples for DeepExplainer
         )
 
         shap_vals = explainer.shap_values(X_eval)
