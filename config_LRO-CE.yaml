@@ -7,7 +7,7 @@ use_wandb: true   # set to null if no wandb should be used
 
 # WanDB Logging
 wandb:
-  project: "MPL-TMT-Combined_LRO-CE"
+  project: "MPL-TMT-Combined_LRO-CE_final"
   entity: "nids-inm4"       # Wandb entity name (user/organization)
   log_freq: 1               # Frequency (in epochs) of logging metrics during training
   notes: 'testing'          # put some notes here
