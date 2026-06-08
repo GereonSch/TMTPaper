@@ -1,0 +1,13 @@
+TMTPaper.code-workspace
+*.pyc
+__pycache__/
+DataFlowDiagram*
+.continue/agents/config.yaml
+.vscode/launch.json
+lightning_logs/
+logging/
+MPL-TMT-Combined_LRO-CE_final/
+wandb/
+
+.vscode/settings.json
+IMPROVEMENTS_SUMMARY.md
