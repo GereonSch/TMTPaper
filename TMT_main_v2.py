@@ -264,14 +264,15 @@ for ckpt_idx, (ckpt_path, X_eval) in enumerate(zip(checkpoint_paths, test_sets))
     try:
         # DeepExplainer works best with tensors
         background_tensor = torch.tensor(background[:10], dtype=torch.float32).to(device)
+        X_eval_tensor = torch.tensor(X_eval, dtype=torch.float32).to(device)
         
-        explainer = shap.DeepExplainer(model_predict, background_tensor)
-        shap_vals = explainer.shap_values(X_eval)
+        explainer = shap.DeepExplainer(model, background_tensor)
+        shap_vals = explainer.shap_values(X_eval_tensor)
         explainer_used = "DeepExplainer"
-        print(f" DeepExplainer succeeded")
+        print(f"  DeepExplainer succeeded")
         
     except Exception as e:
-        print(f"  ✗ DeepExplainer failed: {type(e).__name__}: {str(e)[:100]}")
+        print(f"  DeepExplainer failed: {type(e).__name__}: {str(e)[:100]}")
         
         # 2. Try PermutationExplainer (good alternative)
         print(f"  Attempting PermutationExplainer...")
@@ -284,10 +285,10 @@ for ckpt_idx, (ckpt_path, X_eval) in enumerate(zip(checkpoint_paths, test_sets))
             )
             shap_vals = explainer.shap_values(X_eval)
             explainer_used = "PermutationExplainer"
-            print(f"  ✓ PermutationExplainer succeeded")
+            print(f"  PermutationExplainer succeeded")
             
         except Exception as e2:
-            print(f"  ✗ PermutationExplainer failed: {type(e2).__name__}: {str(e2)[:100]}")
+            print(f"  PermutationExplainer failed: {type(e2).__name__}: {str(e2)[:100]}")
             
             # 3. Fallback to KernelExplainer
             print(f"  Attempting KernelExplainer (fallback)...")
@@ -299,10 +300,10 @@ for ckpt_idx, (ckpt_path, X_eval) in enumerate(zip(checkpoint_paths, test_sets))
                 )
                 shap_vals = explainer.shap_values(X_eval, nsamples=100)
                 explainer_used = "KernelExplainer"
-                print(f"  ✓ KernelExplainer succeeded")
+                print(f"  KernelExplainer succeeded")
                 
             except Exception as e3:
-                print(f"  ✗ KernelExplainer failed: {type(e3).__name__}: {str(e3)[:100]}")
+                print(f"  KernelExplainer failed: {type(e3).__name__}: {str(e3)[:100]}")
                 continue
     
     # Handle output format
@@ -353,7 +354,7 @@ if len(all_shap_values) > 0:
         class_names=["Class 0", "Class 1"]
     )
     plt.tight_layout()
-    plt.savefig("shapts/summary_plot.png", dpi=300, bbox_inches='tight')
+    plt.savefig("logging/shap_plots/summary_plot.png", dpi=300, bbox_inches='tight')
     plt.show()
 
     # Create bar plot of mean absolute SHAP values
@@ -368,7 +369,7 @@ if len(all_shap_values) > 0:
         class_names=["Class 0", "Class 1"]
     )
     plt.tight_layout()
-    plt.savefig("shap_plots/bar_plot.png", dpi=300, bbox_inches='tight')
+    plt.savefig("logging/shap_plots/bar_plot.png", dpi=300, bbox_inches='tight')
     plt.show()
 
     # Save SHAP values for further analysis
