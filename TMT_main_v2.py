@@ -5,32 +5,31 @@
 #
 #################################################
 import numpy as np
+import os
 import time
 import wandb
 import torch
 import pytorch_lightning as pl
-from pytorch_lightning.loggers import WandbLogger
+from pytorch_lightning.loggers import WandbLogger, CSVLogger
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
-import os
-
-os.makedirs("logging", exist_ok=True)
 
 from TMT_utils import load_TMT, augmentation_add_chan, load_config
 from TMT_utils_MPL import load_model, get_dataloaders
+
+os.makedirs("logging", exist_ok=True)
 
 #################################################
 # Load SETTINGS via config
 #################################################
 # Load configuration
 fname_cfg = 'config_LRO-CE.yaml'  # LRO with ContrastiveLossg
-#fname_cfg = 'config_LSO-TPL.yaml'      # LSO with TripletLoss
 cfg = load_config(fname_cfg)
 
 # ====================================
 # Load data and combine datasets
 # ====================================
 X_orig, y_np, subjects = load_TMT(cfg)
-#feature_names = X_orig.columns.tolist()
+
 
 # ==============================
 # Loop over repititions
@@ -71,7 +70,6 @@ for irepeat in range(cfg['train']['n_repeat']):
     # ====================================
     # load and init model
     # ====================================
-    # TODO: add additional head for triplet loss config to allow classification on both, subject and class_labels
     model = load_model(cfg)
 
     # ====================================
@@ -89,8 +87,8 @@ for irepeat in range(cfg['train']['n_repeat']):
     else:
         wandb_logger = None
 
-    from pytorch_lightning.loggers import CSVLogger
 
+    # log data
     csv_logger = CSVLogger(
         save_dir="lightning_logs",
         name="tmt_cv"
@@ -155,12 +153,12 @@ for irepeat in range(cfg['train']['n_repeat']):
 
     acc_list.append(acc)
 
-    # store test and train batches per repetition for later SHAP
+    # store test and train batches per repetition => needed for SHAP
     test_batch = next(iter(test_loader))
     X_test_np = test_batch[0].cpu().numpy()
     test_sets.append(X_test_np)
 
-    # Store training data for SHAP background (sample from training set)
+    # Store training data for SHAP background
     train_batch = next(iter(train_loader))
     X_train_np = train_batch[0].cpu().numpy()
     train_sets_for_background.append(X_train_np)
@@ -184,8 +182,6 @@ print('   max:   ', acc.max())
 print('   mean:  ', acc.mean())
 print('   std:   ', acc.std())
 print('   median:', np.median(acc))
-
-# TODO: add the following metrics also for triplet loss
 if (cfg['model']['loss_type'] == 'CrossEntropy'):
     print('Precision:            % .3f' % trainer.logged_metrics['val_precision'])
     print('Specificity:          % .3f' % trainer.logged_metrics['val_specificity'])
