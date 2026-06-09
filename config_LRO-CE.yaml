@@ -60,8 +60,8 @@ augmentation:
 model:
   loss_type: "CrossEntropy"   # only LRO mode is possible!
   dim_out:  32                # 32 (default). Size of output layer
-  lr:  0.02                    # 0.2 (default). Warm-Up LR value
-  dropout:  0.2               # 0 (default). Dropout ratio
+  lr:  0.2                   # 0.2 (default). Warm-Up LR value
+  dropout:  0.0               # 0 (default). Dropout ratio
   weight_decay:  0.0          # 0 (default). weight decay
   label_smoothing:  0.0       # 0 (default). label smoothing
 
