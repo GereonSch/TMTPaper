@@ -5,7 +5,7 @@ All notable changes to the TMT classification pipeline will be documented in thi
 ## TMT_main_v3.py
 
 ### Added
-- **True Determinism:** Added `pytorch_lightning.seed_everything(seed, workers=True)` inside the training loop to ensure PyTorch, NumPy, and Python random number generators are fully and correctly seeded for every repetition.
+- **True Determinism:** Added `pl.seed_everything(seed, workers=True)` inside the training loop to ensure PyTorch, NumPy, and Python random number generators are fully and correctly seeded for every repetition.
 - **Configurable SHAP Explainer:** Updated the SHAP analysis to respect a new `shap:` configuration block in `config_LRO-CE.yaml`. The explainer (`KernelExplainer`, `PermutationExplainer`, `DeepExplainer`), `max_evals`, `nsamples`, and `batch_size` can now be set dynamically.
 
 ### Changed
