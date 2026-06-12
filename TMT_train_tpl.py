@@ -198,30 +198,33 @@ class MetricLearningModule(pl.LightningModule):
         self._val_losses.clear()
 
 
-def on_train_epoch_end(self):
-    if not hasattr(self, "_train_embeddings") or not self._train_embeddings:
-        return
+# -------------------------
+    # TRAINING EPOCH END
+    # -------------------------
+    def on_train_epoch_end(self):
+        if not hasattr(self, "_train_embeddings") or not self._train_embeddings:
+            return
 
-    all_emb = torch.cat(self._train_embeddings)
-    all_lbl = torch.cat(self._train_labels)
-    avg_loss = torch.stack(self._train_losses).mean()
+        all_emb = torch.cat(self._train_embeddings)
+        all_lbl = torch.cat(self._train_labels)
+        avg_loss = torch.stack(self._train_losses).mean()
 
-    # Compute epoch-level training accuracy across all samples
-    tm = self.accuracy_calculator.get_accuracy(
-        query=all_emb,
-        query_labels=all_lbl,
-        reference=all_emb,
-        reference_labels=all_lbl,
-        ref_includes_query=False  # exclude self-matches for true retrieval accuracy
-    )
+        # Compute epoch-level training accuracy across all samples
+        tm = self.accuracy_calculator.get_accuracy(
+            query=all_emb,
+            query_labels=all_lbl,
+            reference=all_emb,
+            reference_labels=all_lbl,
+            ref_includes_query=False  # exclude self-matches for true retrieval accuracy
+        )
 
-    self.log("train_acc", tm["precision_at_1"], prog_bar=True)
-    self.log("train_loss_epoch", avg_loss, prog_bar=True)
+        self.log("train_acc", tm["precision_at_1"], prog_bar=True)
+        self.log("train_loss_epoch", avg_loss, prog_bar=True)
 
-    # Clear accumulated tensors for next epoch
-    self._train_embeddings.clear()
-    self._train_labels.clear()
-    self._train_losses.clear()
+        # Clear accumulated tensors for next epoch
+        self._train_embeddings.clear()
+        self._train_labels.clear()
+        self._train_losses.clear()
 
     # -------------------------
     # OPTIMIZER
