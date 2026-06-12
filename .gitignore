@@ -12,3 +12,4 @@ wandb/
 .vscode/settings.json
 IMPROVEMENTS_SUMMARY.md
 TMT_main_v4.py
+testing-tmt/
