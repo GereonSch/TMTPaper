@@ -8,8 +8,8 @@ use_wandb: true   # set to null if no wandb should be used
 
 # WanDB Logging
 wandb:
-  # project: "MPL-TMT-Combined_LSO-TPL"
-  project: "testing-tmt"
+  project: "MPL-TMT-Combined_LSO-TPL_final"
+  # project: "testing-tmt"
   # project: "testing"
   entity: "nids-inm4"       # Wandb entity name (user/organization)
   log_freq: 1               # Frequency (in epochs) of logging metrics during training
