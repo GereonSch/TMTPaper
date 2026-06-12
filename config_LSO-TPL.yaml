@@ -1,8 +1,8 @@
 # ======================================
 # General configuration settings
 # ======================================
-# seed: null  # set to None (null) or a value for deterministic reproducibility
-seed: 2025
+seed: null  # set to None (null) or a value for deterministic reproducibility
+# seed: 2025
 
 use_wandb: true   # set to null if no wandb should be used
 
@@ -38,16 +38,16 @@ data:
 train:
   mode: "LSO"  # Learning mode: "LRO" for leave-one-run-out cross-validation, "LSO" for leave-subject-out cross-validation
 
-  n_repeat: 1
+  # n_repeat: 1
   # n_repeat: 3
   # n_repeat: 5
-  # n_repeat: 10
+  n_repeat: 10
   # n_repeat: 50
   # n_repeat: 100
 
   # Number of Epochs
-  # max_epochs:  100
-  max_epochs:  200
+  max_epochs:  100
+  # max_epochs:  200
   # max_epochs:  250
   # max_epochs:  500
 
@@ -71,26 +71,26 @@ augmentation:
 # ======================================
 model:
   loss_type: 'triplet'      # CrossEntropy | triplet | NTXent | contrastive | circle
-  triplet_type: 'all'       # lower margin to margin=0.2
+  # triplet_type: 'all'       # lower margin to margin=0.2
 
-  # triplet_type: 'semihard'  # semihard with margin=0.4., hard with margin=0.05, all with margin=0.2
+  triplet_type: 'semihard'  # semihard with margin=0.4., hard with margin=0.05, all with margin=0.2
   # margin: 0.4
   # margin: 0.2
-  distance_metric: "CosineSimilarity"  # CosineSimilarity or else L2 (LpDistance with p=2)
-  # distance_metric: "LpDistance"  # CosineSimilarity or else L2 (LpDistance with p=2)
+  # distance_metric: "CosineSimilarity"  # CosineSimilarity or else L2 (LpDistance with p=2)
+  distance_metric: "LpDistance"  # CosineSimilarity or else L2 (LpDistance with p=2)
 
   # dim_out:  8
   # dim_out:  16
-  # dim_out:  32                # 32 (default). Size of output layer
+  dim_out:  32                # 32 (default). Size of output layer
   # dim_out:  50
   # dim_out:  64
   # dim_out:  128
-  dim_out:  256
+  # dim_out:  256
 
-  lr:  0.0001
+  # lr:  0.0001
   # lr:  0.01
-  # lr:  0.1
-  lr:  0.2                    # 0.2 (default). Warm-Up LR value
+  lr:  0.1
+  # lr:  0.2                    # 0.2 (default). Warm-Up LR value
   # lr:  0.5
 
   dropout:  0.0               # 0 (default). Dropout ratio
@@ -107,3 +107,11 @@ trainer:
   gradient_clip_val: 1.0        # 1.0 (default). Clip gradients to stabilize updates or set to null
 
 
+# ======================================
+# SHAP Analysis
+# ======================================
+shap:
+  explainer: 'PermutationExplainer'  # 'DeepExplainer', 'PermutationExplainer', or 'KernelExplainer'
+  nsamples: 100                 # Used for KernelExplainer
+  max_evals: 5000               # Used for PermutationExplainer
+  batch_size: 50                # Batch size for explainers
